@@ -1,0 +1,53 @@
+
+
+services:
+    astro_backend:
+      build: 
+        context: .
+        dockerfile: Dockerfile.prod
+      command: gunicorn space.wsgi:application --bind 0.0.0.0:8000
+      volumes:
+        - static_volume:/home/app/backend/staticfiles
+        - media_volume:/home/app/backend/mediafiles  
+      expose:
+        - 8000
+      env_file:
+        - .env.prod 
+      depends_on:
+        - db
+      environment:
+        - APP_HOME=/home/app/astro_backend
+      networks:
+        - astro_network
+
+    db:
+      image: postgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data/
+      env_file:
+        - .env.prod.dbms    
+      networks:
+        - astro_network
+
+    nginx:
+      build: ./nginx
+      volumes:
+      - static_volume:/home/app/backend/staticfiles 
+      - media_volume:/home/app/backend/mediafiles 
+      ports:
+        - 1337:80
+      depends_on:
+        - astro_backend  
+      networks:
+      - astro_network   
+      
+
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  astro_network:
+    driver: bridge  
